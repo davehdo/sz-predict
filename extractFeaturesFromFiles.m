@@ -14,8 +14,10 @@ function [ features ] = extractFeaturesFromFiles( fname_list, dir_name )
     %     sampling_frequency: 399.6098
     %               channels: {1x16 cell}
     %               sequence: 1
-        new_features = mean(extractFeaturesFromFile(data_file),2);
-
+        new_features = [
+            mean(extractFeaturesFromFile(data_file),2);
+            std(extractFeaturesFromFile(data_file)')'
+        ];
         features = [features new_features];
     end
 end
