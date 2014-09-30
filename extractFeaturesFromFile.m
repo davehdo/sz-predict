@@ -14,9 +14,12 @@ function [ features ] = extractFeaturesFromFile( data_file )
     raw_data_length = size(raw_data,2);
 
     nChannels = size(raw_data,1);
+    
+    % the head can serve as a baseline for each clip
     nPoints_head = min( ceil( head * Fs ), raw_data_length);
     cropped_head = raw_data(:,1:nPoints_head);
 
+    % the tail probably has the most predictive features
     nPoints_tail = min( ceil( tail * Fs ), raw_data_length);
     cropped_tail = raw_data(:,(raw_data_length - nPoints_tail + 1):raw_data_length);
 
@@ -41,17 +44,17 @@ function [ features ] = extractFeaturesFromFile( data_file )
     reshaped_head = reshape(trimmed_head, n_points_per_window, n_windows_head);
     reshaped_tail = reshape(trimmed_tail, n_points_per_window, n_windows_tail);
 
-        a = extractEnvelope(reshaped_head);
-        b = extractMedianFrequency( reshaped_head, Fs);
-        c = extractPowerBands( reshaped_head, Fs );
+        a = extractEnvelope(reshaped_tail);
+        b = extractMedianFrequency( reshaped_tail, Fs);
+        c = extractPowerBands( reshaped_tail, Fs );
 
     features = [
         a;
         b;
         c;
-        extractEnvelope(reshaped_tail) ./ a;
-        extractMedianFrequency( reshaped_tail, Fs) ./ b;
-        extractPowerBands( reshaped_tail, Fs ) ./ c;
+        extractEnvelope(reshaped_head) ./ a;
+        extractMedianFrequency( reshaped_head, Fs) ./ b;
+        extractPowerBands( reshaped_head, Fs ) ./ c;
     ];
 end
 
