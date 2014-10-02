@@ -2,16 +2,16 @@ clear
 
 %% Load and clip the files
 preictal_directories = {
-    'data/Dog_1/training_1';
-    'data/Dog_5/training_1';
+     'data/Dog_1/training_1';
+     'data/Dog_2/training_1';
+     'data/Dog_5/training_1';
 };
-%     'data/Dog_2/training_1';
 
 interictal_directories = {
     'data/Dog_1/training_0';
-    'data/Dog_5/training_0';
+     'data/Dog_2/training_0';
+     'data/Dog_5/training_0';
 };
-%     'data/Dog_2/training_0';
 
 test_directories = {
     'data/Dog_1/testing';
