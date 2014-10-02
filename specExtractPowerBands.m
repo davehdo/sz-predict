@@ -13,7 +13,7 @@ data_file = getfield(file_top_struct,fn{1});
     
 figure(1);
 
-each_row_shows = 20; % sec
+each_row_shows = 30; % sec
 Fs = getfield(data_file, 'sampling_frequency');
 all_dat = mean(getfield(data_file, 'data'),1);
 points_per_row = floor(Fs*each_row_shows);
@@ -23,7 +23,7 @@ stdev = std(all_dat);
 for row = 1:6
     dat = all_dat([1:points_per_row] + points_per_row*row);
     
-    window_size_seconds = 0.01; %seconds
+    window_size_seconds = 1; %seconds
     n_points_per_window = ceil(Fs * window_size_seconds);
     n_windows = floor(length(dat) / n_points_per_window);
 
@@ -31,15 +31,14 @@ for row = 1:6
 
     reshaped = reshape(trimmed, n_points_per_window, n_windows);
 
-    feature = abs(dat) > 3*stdev;
+      
+    
+   feature = extractPowerBands(reshaped, Fs);
     
     
-%     feature = extractEnvelope(reshaped);
-    
-    
-    subplot(6,1,row);
-    stem(linspace(0,each_row_shows, length(feature)), feature, 'r');
-
+    subplot(6,1,2*row-1);
+    plot(linspace(0,each_row_shows, length(feature)), feature, 'r');
+    subplot(6,1,2*row);
     hold on
     plot(linspace(0,each_row_shows, length(dat)), dat);
     hold off
