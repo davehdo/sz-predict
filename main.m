@@ -32,22 +32,22 @@ interictal_learning_signal = zeros(1, size(interictal_features, 2));
 concat_features = [preictal_features interictal_features];
 concat_learning_signal = [preictal_learning_signal interictal_learning_signal];
 
-use_all_training_data = true
+use_half_for_offline_testing = true
 
-if true % set to true if 
-    disp('Using all training data');
-    training_features = concat_features;
-    training_learning_signal = concat_learning_signal;
-
-    testing_features = concat_features;
-    testing_learning_signal = concat_learning_signal;
-else
+if use_half_for_offline_testing  % set to true if 
     disp('Using half of training data to allow offline testing');
     training_features = concat_features(:, 1:2:end);
     training_learning_signal = concat_learning_signal(:, 1:2:end);
 
     testing_features = concat_features(:, 2:2:end);
     testing_learning_signal = concat_learning_signal(:, 2:2:end);
+else
+    disp('Using all training data');
+    training_features = concat_features;
+    training_learning_signal = concat_learning_signal;
+
+    testing_features = concat_features;
+    testing_learning_signal = concat_learning_signal;
 end
 
 %% train the random forest model and test on known test set
