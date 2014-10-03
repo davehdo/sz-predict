@@ -18,6 +18,7 @@ interictal_directories = {
 test_directories = {
     'data/Dog_1/testing';
     'data/Dog_2/testing';
+    'data/Dog_3/testing';
     'data/Dog_5/testing';
 };
 
