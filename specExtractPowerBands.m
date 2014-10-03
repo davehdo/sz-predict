@@ -20,10 +20,10 @@ points_per_row = floor(Fs*each_row_shows);
 
 stdev = std(all_dat);
 
-for row = 1:6
+for row = 1:3
     dat = all_dat([1:points_per_row] + points_per_row*row);
     
-    window_size_seconds = 1; %seconds
+    window_size_seconds = 5; %seconds
     n_points_per_window = ceil(Fs * window_size_seconds);
     n_windows = floor(length(dat) / n_points_per_window);
 
