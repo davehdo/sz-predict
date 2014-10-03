@@ -43,7 +43,7 @@ function [ features ] = extractGlobalFeaturesFromFile( data_file )
     %cropped = cropped + [sine;sine]
 
     slope_spike_count = sum(spikes_in_tail) - sum(spikes_in_head);
-    spike_density = 1.0 * sum(spikes) / raw_data_length;
+%     spike_density = 1.0 * sum(spikes) / raw_data_length;
     spike_density_tail = 1.0 * sum(spikes_in_tail) / tail;
 
     % variability in spike count for 10-sec windows
@@ -54,10 +54,10 @@ function [ features ] = extractGlobalFeaturesFromFile( data_file )
     % because very frequent 'spiking' can lead to extreme values
     % we create another indicator of spiking that only counts once per
     % 0.05-sec windows
-    reshaped_05 = segmentSignal(abs(raw_tail) > (4*stdev), Fs, 0.05);
+%     reshaped_05 = segmentSignal(abs(raw_tail) > (4*stdev), Fs, 0.05);
     
-    spikes_per_05 = any(reshaped_05,1); 
-    spike_density_05 = 1.0 * sum(spikes_per_05) / tail;
+%     spikes_per_05 = any(reshaped_05,1); 
+%     spike_density_05 = 1.0 * sum(spikes_per_05) / tail;
     
     % frequency power bands
     reshaped_10b = segmentSignal(raw_tail, Fs, 5); % 5 sec is determined to separate better than 10 or 20 second windows
@@ -70,14 +70,8 @@ function [ features ] = extractGlobalFeaturesFromFile( data_file )
 % use specExtractFeaturesFromFiles to inspect the power of features to
 % differentiate
     features = [
-        sum(abs(combined) > (2*stdev)); % useful, predicts preictal
-%         sum(abs(combined) > (3*stdev)); % not useful
         sum(abs(combined) > (4*stdev)); % useful, predicts interictal
-        sum(abs(combined) > (5*stdev)); % useful, predicts interictal
-%         sum(abs(raw_tail) > (2*stdev)); % not useful 
-        sum(abs(raw_tail) > (3*stdev)); % useful, predicts interictal
         sum(abs(raw_tail) > (4*stdev)); % very useful, predicts interictal
-        sum(abs(raw_tail) > (5*stdev)); % useful, predicts interictal
         slope_spike_count; % useful
         spike_density_tail; % useful
 %         spike_density; % not useful
@@ -86,6 +80,12 @@ function [ features ] = extractGlobalFeaturesFromFile( data_file )
         power_bands_mean; % 6 bands, some are useful
 %         10 + rand;
 %         rand;
+        sum(raw_tail); %useful
+%         mean(abs(raw_tail)); % not useful?
+        mean(raw_tail .^ 2); % useful
+        sum(raw_tail(2:end) - raw_tail(1:end-1)); % variable usefulness
+%         stdev; % not useful
+%         std(raw_tail); % not useful
     ];
 end
 

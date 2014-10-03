@@ -4,12 +4,14 @@ clear
 preictal_directories = {
      'data/Dog_1/training_1';
      'data/Dog_2/training_1';
+     'data/Dog_3/training_1';
      'data/Dog_5/training_1';
 };
 
 interictal_directories = {
-    'data/Dog_1/training_0';
+     'data/Dog_1/training_0';
      'data/Dog_2/training_0';
+     'data/Dog_3/training_0';
      'data/Dog_5/training_0';
 };
 
@@ -29,13 +31,40 @@ interictal_learning_signal = zeros(1, size(interictal_features, 2));
 concat_features = [preictal_features interictal_features];
 concat_learning_signal = [preictal_learning_signal interictal_learning_signal];
 
-%% train the random forest model
+use_all_training_data = true
+
+if true % set to true if 
+    disp('Using all training data');
+    training_features = concat_features;
+    training_learning_signal = concat_learning_signal;
+
+    testing_features = concat_features;
+    testing_learning_signal = concat_learning_signal;
+else
+    disp('Using half of training data to allow offline testing');
+    training_features = concat_features(:, 1:2:end);
+    training_learning_signal = concat_learning_signal(:, 1:2:end);
+
+    testing_features = concat_features(:, 2:2:end);
+    testing_learning_signal = concat_learning_signal(:, 2:2:end);
+end
+
+%% train the random forest model and test on known test set
 % classification: 
-X_trn = concat_features';
-Y_trn = concat_learning_signal';
+X_trn = training_features';
+Y_trn = training_learning_signal';
 disp('Training');
-model_class = classRF_train(X_trn,Y_trn);
+model_class = classRF_train(X_trn,Y_trn,500,3);
 disp('Training complete');
+
+
+X_tst = testing_features';
+Y_tst = testing_learning_signal';
+Y_hat = classRF_predict(X_tst,model_class);
+
+err_rate = length(find(Y_hat~=Y_tst)) / length(Y_hat); %number of misclassification
+
+disp(['error rate ' num2str(err_rate)]);
 
 %% Save the model 
 if exist('models', 'file') == 0
@@ -49,15 +78,6 @@ end
 
 save(['models/model_' num2str(i) '.mat'], 'model_class');
 disp(['Saved as models/model_' num2str(i) '.mat']);
-
-%% Test the training set (just to see if everything worked)
-X_tst = concat_features';
-Y_tst = concat_learning_signal';
-Y_hat = classRF_predict(X_tst,model_class);
-
-err_rate = length(find(Y_hat~=Y_tst)); %number of misclassification
-
-disp(['number of misclassifications ' num2str(err_rate)]);
 
 %% Load and test the test set
 result=input('Use cached test set features? (Do this if feature extraction algorithm has not changed) y/n ','s');
@@ -87,7 +107,7 @@ end
 % 
 % Y_hat = Y_hats{1} + Y_hats{2} > 0
 Y_hat = classRF_predict(X_tst,model_class);
-
+disp([ num2str(100.0 * mean(Y_hat)) '% of test data predicted to be seizure']);
 figure;
 stem(Y_hat)
 title('predictions on test data');
