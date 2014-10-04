@@ -35,23 +35,18 @@ plotPopulationCharacteristics( preictal_features, interictal_features );
 concat_features = [preictal_features interictal_features];
 concat_learning_signal = [preictal_learning_signal interictal_learning_signal];
 
-use_half_for_offline_testing = false
+percent_used_for_training = 80;
 
-if use_half_for_offline_testing  % set to true if 
-    disp('Using half of training data to allow offline testing');
-    training_features = concat_features(:, 1:2:end);
-    training_learning_signal = concat_learning_signal(:, 1:2:end);
+indexes_for_training = rand(1, size(concat_features,2) ) < percent_used_for_training / 100.0;
 
-    testing_features = concat_features(:, 2:2:end);
-    testing_learning_signal = concat_learning_signal(:, 2:2:end);
-else
-    disp('Using all training data');
-    training_features = concat_features;
-    training_learning_signal = concat_learning_signal;
+disp(['Using ' num2str(percent_used_for_training) ' for training (' num2str(sum(indexes_for_training)) ' of ' num2str(length(indexes_for_training)) ')']);
 
-    testing_features = concat_features;
-    testing_learning_signal = concat_learning_signal;
-end
+
+training_features = concat_features(:, indexes_for_training);
+training_learning_signal = concat_learning_signal(:, indexes_for_training);
+
+testing_features = concat_features(:, indexes_for_training == 0);
+testing_learning_signal = concat_learning_signal(:, indexes_for_training == 0);
 
 %% train the random forest model and test on known test set
 % classification: 
@@ -61,14 +56,13 @@ disp('Training');
 model_class = classRF_train(X_trn,Y_trn,500,3);
 disp('Training complete');
 
-
 X_tst = testing_features';
 Y_tst = testing_learning_signal';
 Y_hat = classRF_predict(X_tst,model_class);
 
 err_rate = length(find(Y_hat~=Y_tst)) / length(Y_hat); %number of misclassification
 
-disp(['error rate ' num2str(err_rate)]);
+disp(['Error rate ' num2str(err_rate)]);
 
 %% Save the model 
 % creates the directory
@@ -106,7 +100,7 @@ end
 
 disp('Done. Test data are loaded and ready to run predictions');
 
-%% Run the predictions on test data and plot them
+% Run the predictions on test data and plot them
 
 Y_hat = classRF_predict(X_tst,model_class);
 disp([ num2str(100.0 * mean(Y_hat)) '% of test data predicted to be seizure']);
@@ -132,6 +126,6 @@ for fname = all_files
     j = j + 1;
    fprintf( fid, [ fname{1} ',' num2str(Y_hat(j)) '\n' ] ); 
 end
-fclose(fid)
-disp(['Saved as ' 'submissions/partial_' num2str(i) '.csv'])
+fclose(fid);
+disp(['Saved as ' 'submissions/partial_' num2str(i) '.csv']);
 
