@@ -28,11 +28,14 @@ preictal_learning_signal = ones(1, size(preictal_features, 2));
 interictal_features = extractFeaturesFromFiles( filesInDirectories(interictal_directories) );
 interictal_learning_signal = zeros(1, size(interictal_features, 2));
 
+%%
+plotPopulationCharacteristics( preictal_features, interictal_features );
+
 %% concatenate all the data
 concat_features = [preictal_features interictal_features];
 concat_learning_signal = [preictal_learning_signal interictal_learning_signal];
 
-use_half_for_offline_testing = true
+use_half_for_offline_testing = false
 
 if use_half_for_offline_testing  % set to true if 
     disp('Using half of training data to allow offline testing');
@@ -68,17 +71,24 @@ err_rate = length(find(Y_hat~=Y_tst)) / length(Y_hat); %number of misclassificat
 disp(['error rate ' num2str(err_rate)]);
 
 %% Save the model 
+% creates the directory
 if exist('models', 'file') == 0
    mkdir('models'); 
 end
 
-i = 1;
-while exist(['models/model_' num2str(i) '.mat'], 'file') ~= 0
-    i = i + 1;
+if isfield(model_class, 'serial')
+    disp('this model appears to have been saved already');
+else
+    % look for next available serial number
+    i = 1;
+    while exist(['models/model_' num2str(i) '.mat'], 'file') ~= 0
+        i = i + 1;
+    end
+    model_class.serial = ['model_' num2str(i)];
+    save(['models/model_' num2str(i) '.mat'], 'model_class');
+    disp(['Saved as models/model_' num2str(i) '.mat']);
 end
 
-save(['models/model_' num2str(i) '.mat'], 'model_class');
-disp(['Saved as models/model_' num2str(i) '.mat']);
 
 %% Load and test the test set
 result=input('Use cached test set features? (Do this if feature extraction algorithm has not changed) y/n ','s');
@@ -94,19 +104,10 @@ else
     load('features_from_test_set.mat');
 end
 
-%%
-%
-% model_filenames = {'model_8', 'model_9', 'model_10'};
-% Y_hats = cell( size(model_filenames) );
-% 
-% for i=1:length(model_filenames); 
-%     disp(['Loading models/' model_filenames{i}]);
-%     model = getfield(load(['models/' model_filenames{i}]), 'model_class');
-%     Y_hats{i} = classRF_predict(X_tst,model);
-%     disp([' predicted ' num2str(1.0 * sum(Y_hats{i}==1) / length(Y_hats{i})) ' % of test cases to be preictal']);
-% end
-% 
-% Y_hat = Y_hats{1} + Y_hats{2} > 0
+disp('Done. Test data are loaded and ready to run predictions');
+
+%% Run the predictions on test data and plot them
+
 Y_hat = classRF_predict(X_tst,model_class);
 disp([ num2str(100.0 * mean(Y_hat)) '% of test data predicted to be seizure']);
 figure;
@@ -114,8 +115,10 @@ stem(Y_hat)
 title('predictions on test data');
 % err_rate = length(find(Y_hat~=Y_tst)) %number of misclassification
 
-%%
+%% Save the predictions to a CSV
 all_files = filesInDirectories(test_directories);
+
+model_class.serial; % this should exist. this line will trigger exception if not
 
 i = 1;
 while exist(['submissions/partial_' num2str(i) '.csv'], 'file') ~= 0
@@ -124,6 +127,7 @@ end
 
 fid = fopen(['submissions/partial_' num2str(i) '.csv'],'w');
 j = 0;
+fprintf( fid, ['Model: ' model_class.serial '\n']);
 for fname = all_files
     j = j + 1;
    fprintf( fid, [ fname{1} ',' num2str(Y_hat(j)) '\n' ] ); 
