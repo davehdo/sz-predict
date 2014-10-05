@@ -2,17 +2,17 @@ clear
 
 %% Load and clip the files
 preictal_directories = {
-     'data/Dog_1/training_1';
-     'data/Dog_2/training_1';
-     'data/Dog_3/training_1';
-     'data/Dog_5/training_1';
+    'data/Dog_1/training_1';
+    'data/Dog_2/training_1';
+    'data/Dog_3/training_1';
+    'data/Dog_5/training_1';
 };
 
 interictal_directories = {
-     'data/Dog_1/training_0';
-     'data/Dog_2/training_0';
-     'data/Dog_3/training_0';
-     'data/Dog_5/training_0';
+    'data/Dog_1/training_0';
+    'data/Dog_2/training_0';
+    'data/Dog_3/training_0';
+    'data/Dog_5/training_0';
 };
 
 test_directories = {
@@ -27,15 +27,17 @@ preictal_learning_signal = ones(1, size(preictal_features, 2));
 
 interictal_features = extractFeaturesFromFiles( filesInDirectories(interictal_directories) );
 interictal_learning_signal = zeros(1, size(interictal_features, 2));
+disp(['Done loading the training data']);
 
 %%
 plotPopulationCharacteristics( preictal_features, interictal_features );
+
 
 %% concatenate all the data
 concat_features = [preictal_features interictal_features];
 concat_learning_signal = [preictal_learning_signal interictal_learning_signal];
 
-percent_used_for_training = 80;
+percent_used_for_training = 90;
 
 indexes_for_training = rand(1, size(concat_features,2) ) < percent_used_for_training / 100.0;
 
