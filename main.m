@@ -2,24 +2,24 @@ clear
 
 %% Load and clip the files
 preictal_directories = {
-    'data/Dog_1/training_1';
-    'data/Dog_2/training_1';
-    'data/Dog_3/training_1';
-    'data/Dog_5/training_1';
+%      'data/Dog_1/training_1';
+     'data/Dog_2/training_1';
+%      'data/Dog_3/training_1';
+%      'data/Dog_5/training_1';
 };
 
 interictal_directories = {
-    'data/Dog_1/training_0';
-    'data/Dog_2/training_0';
-    'data/Dog_3/training_0';
-    'data/Dog_5/training_0';
+%      'data/Dog_1/training_0';
+     'data/Dog_2/training_0';
+%      'data/Dog_3/training_0';
+%      'data/Dog_5/training_0';
 };
 
 test_directories = {
-    'data/Dog_1/testing';
-    'data/Dog_2/testing';
-    'data/Dog_3/testing';
-    'data/Dog_5/testing';
+%      'data/Dog_1/testing';
+     'data/Dog_2/testing';
+%      'data/Dog_3/testing';
+%      'data/Dog_5/testing';
 };
 
 preictal_features = extractFeaturesFromFiles( filesInDirectories(preictal_directories) );
@@ -37,11 +37,11 @@ plotPopulationCharacteristics( preictal_features, interictal_features );
 concat_features = [preictal_features interictal_features];
 concat_learning_signal = [preictal_learning_signal interictal_learning_signal];
 
-percent_used_for_training = 90;
+percent_used_for_training = 80;
 
 indexes_for_training = rand(1, size(concat_features,2) ) < percent_used_for_training / 100.0;
 
-disp(['Using ' num2str(percent_used_for_training) ' for training (' num2str(sum(indexes_for_training)) ' of ' num2str(length(indexes_for_training)) ')']);
+disp(['Using ' num2str(percent_used_for_training) '% for training (' num2str(sum(indexes_for_training)) ' of ' num2str(length(indexes_for_training)) ')']);
 
 
 training_features = concat_features(:, indexes_for_training);
@@ -50,12 +50,12 @@ training_learning_signal = concat_learning_signal(:, indexes_for_training);
 testing_features = concat_features(:, indexes_for_training == 0);
 testing_learning_signal = concat_learning_signal(:, indexes_for_training == 0);
 
-%% train the random forest model and test on known test set
+% train the random forest model and test on known test set
 % classification: 
 X_trn = training_features';
 Y_trn = training_learning_signal';
 disp('Training');
-model_class = classRF_train(X_trn,Y_trn,500,3);
+model_class = classRF_train(X_trn,Y_trn,1000,3);
 disp('Training complete');
 
 X_tst = testing_features';
