@@ -2,7 +2,8 @@ function [ bands ] = extractPowerBands( signal, Fs )
 %UNTITLED7 Summary of this function goes here
 %   Detailed explanation goes here
 
-bands = zeros( 6, size(signal, 2) );
+n_bands = size(powerBands( signal(:,1)', Fs ),2 );
+bands = zeros( n_bands, size(signal, 2) );
 
 for i = 1:size(signal, 2)
     
