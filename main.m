@@ -1,5 +1,7 @@
 clear
 
+%%
+
 subjects = struct;
 
 subjects(1).preictal_dir = 'data/Dog_1/training_1';
@@ -11,13 +13,17 @@ subjects(2).interictal_dir = 'data/Dog_2/training_0';
 subjects(3).preictal_dir = 'data/Dog_3/training_1';
 subjects(3).interictal_dir = 'data/Dog_3/training_0';
 
-subjects(4).preictal_dir = 'data/Dog_5/training_1';
-subjects(4).interictal_dir = 'data/Dog_5/training_0';
+subjects(4).preictal_dir = 'data/Dog_4/training_1';
+subjects(4).interictal_dir = 'data/Dog_4/training_0';
+
+subjects(5).preictal_dir = 'data/Dog_5/training_1';
+subjects(5).interictal_dir = 'data/Dog_5/training_0';
 
 test_directories = {
      'data/Dog_1/testing';
      'data/Dog_2/testing';
      'data/Dog_3/testing';
+     'data/Dog_4/testing';
      'data/Dog_5/testing';
 };
 
@@ -40,7 +46,7 @@ for i = 1:length(subjects);
 end
 
 %% Concatenate all the data, divide into training and test sets, and run validation
-percent_used_for_training = 80;
+percent_used_for_training = 90;
 
 for i = 1:length(subjects);
     concat_features = [subjects(i).preictal_features subjects(i).interictal_features];
@@ -54,8 +60,8 @@ for i = 1:length(subjects);
     subjects(i).training_features = concat_features(:, indexes_for_training);
     subjects(i).training_learning_signal = concat_learning_signal(:, indexes_for_training);
 
-    subjects(i).testing_features = concat_features(:, indexes_for_training == 0);
-    subjects(i).testing_learning_signal = concat_learning_signal(:, indexes_for_training == 0);
+    subjects(i).validation_features = concat_features(:, indexes_for_training == 0);
+    subjects(i).validation_learning_signal = concat_learning_signal(:, indexes_for_training == 0);
 
     % train the random forest model and test on known test set
     % classification: 
@@ -63,8 +69,8 @@ for i = 1:length(subjects);
     subjects(i).model = classRF_train(subjects(i).training_features', subjects(i).training_learning_signal', 1000,3);
  
 
-    Y_tst = subjects(i).testing_learning_signal';
-    Y_hat = classRF_predict(subjects(i).testing_features', subjects(i).model);
+    Y_tst = subjects(i).validation_learning_signal';
+    Y_hat = classRF_predict(subjects(i).validation_features', subjects(i).model);
     subjects(i).testing_predictions = Y_hat;
     
     subjects(i).testing_err_rate = length(find(Y_hat~=Y_tst)) / length(Y_hat); %number of misclassification
@@ -80,12 +86,12 @@ if exist('models', 'file') == 0
    mkdir('models'); 
 end
 
-look for next available serial number
+% look for next available serial number
 i = 1;
 while exist(['models/models_' num2str(i) '.mat'], 'file') ~= 0
     i = i + 1;
 end
-model_class.serial = ['models_' num2str(i)];
+% model_class.serial = ['models_' num2str(i)];
 save(['models/models_' num2str(i) '.mat'], 'subjects');
 disp(['Saved as models/models_' num2str(i) '.mat']);
 
@@ -94,26 +100,24 @@ concat_features = [];
 concat_learning_signal = [];
 
 for i = 1:length(subjects);
-    n_features = size(subjects(i).preictal_features, 1);
-    if n_features < 129
-        disp(['Warning: dog ' num2str(i) ' has ' num2str(n_features) ' features (expected 129)']);
-    end
-    padding = 129 - n_features;
-
     n_clips = size(  subjects(i).preictal_features, 2) + size( subjects(i).interictal_features, 2);
-    concat_features = [concat_features, [[subjects(i).preictal_features, subjects(i).interictal_features]; zeros( padding, n_clips)]];
+    concat_features = [concat_features, subjects(i).preictal_features, subjects(i).interictal_features];
     concat_learning_signal = [concat_learning_signal, i*ones(1, n_clips)];
+    clear n_clips
+
 end
 
 indexes_for_training = rand(1, size(concat_features,2) ) < percent_used_for_training / 100.0;
 
-disp(['Using ' num2str(percent_used_for_training) '% for training (' num2str(sum(indexes_for_training)) ' of ' num2str(length(indexes_for_training)) ')...']);
+disp(['Using ' num2str(percent_used_for_training) '% for training which_dog_model(' num2str(sum(indexes_for_training)) ' of ' num2str(length(indexes_for_training)) ')...']);
 
 training_features = concat_features(:, indexes_for_training);
 training_learning_signal = concat_learning_signal(:, indexes_for_training);
 
 testing_features = concat_features(:, indexes_for_training == 0);
 testing_learning_signal = concat_learning_signal(:, indexes_for_training == 0);
+
+clear concat_features concat_learning_signal indexes_for_training
 
 % train the random forest model and test on known test set
 % classification: 
@@ -122,13 +126,17 @@ Y_trn = training_learning_signal';
 which_dog_model = classRF_train(X_trn,Y_trn,1000,3);
 disp(' Training complete');
 
+clear training_features training_learning_signal;
+
 X_tst = testing_features';
 Y_tst = testing_learning_signal';
-Y_hat = classRF_predict(X_tst,model_class);
+Y_hat = classRF_predict(X_tst,which_dog_model);
 
-err_rate = length(find(Y_hat~=Y_tst)) / length(Y_hat); %number of misclassification
+clear testing_features testing_learning_signal;
 
-disp([' Error rate ' num2str(err_rate)]);
+which_dog_err_rate = length(find(Y_hat~=Y_tst)) / length(Y_hat); %number of misclassification
+
+disp([' Error rate ' num2str(which_dog_err_rate)]);
 
 %% Load and test the test set
 result=input('Use cached test set features? (Do this if feature extraction algorithm has not changed) y/n ','s');
@@ -157,19 +165,31 @@ stem(predicted_subject);
 title('predict which subject each entry belongs to');
 % err_rate = length(find(Y_hat~=Y_tst)) %number of misclassification
 
-%% go through each and run predictions on which ones are preictal 
+%% Go through each subject and run predictions on which ones are preictal 
 
+% create an empty array
 predicted_preictal = -1 * ones( size(X_tst,1), 1); % many x 1 array
+
+figure;
 
 for i = 1:length(subjects);
     test_entry_ids = find(predicted_subject == i);
     predicted_preictal(test_entry_ids) = classRF_predict( X_tst( test_entry_ids, : ), subjects(i).model);
+    disp(['Subject ' num2str(i) ': ' num2str( 100.0 * mean(predicted_preictal(test_entry_ids)) ) '% predicted to be preictal']);
+    hold on
+    bar( i, 100.0 * mean(predicted_preictal(test_entry_ids)));
+    hold off
 end
 
-figure;
-stem(predicted_preictal) % many x 1 array
-title('Predict which ones are preictal');
+% stem(predicted_preictal) % many x 1 array
+title('Predict which ones are preictal (each should be near 50%)');
+hold on;
+plot( 1:length(subjects), 50.0 * ones(1, length(subjects)), 'r' );
+hold off;
 disp([ num2str(100.0 * mean(predicted_preictal)) '% of test data predicted to be seizure']);
+xlabel('Subject');
+ylabel('Percent predicted to be preictal');
+
 %% Save the predictions to a CSV
 
 test_files = filesInDirectories(test_directories); % 2 x many array
