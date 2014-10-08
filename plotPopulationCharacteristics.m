@@ -9,7 +9,7 @@ function [ null ] = plotPopulationCharacteristics( preictal_features, interictal
 
     combined_stderr = preictal_mean ./ interictal_mean .* sqrt( (preictal_stderr ./ preictal_mean) .^ 2 + (interictal_stderr ./ interictal_mean) .^ 2 ) 
     %%
-    figure
+    
     title('Likelihood ratio of preictal based on features');
     errorbar( mean( preictal_features, 2 ) ./ mean( interictal_features, 2 ), combined_stderr )
     hold on
